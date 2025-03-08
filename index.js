@@ -76,75 +76,29 @@ const LearnerSubmissions = [
   },
 ];
 
-function dueDateCheck(obj) {
-  let assignmetObj = AssignmentGroup.assignments.find(
-    (item) => {
-      /**
-       * Check submitted assignment id is equal to assignment id in the AssignmentGroup
-       * if yes
-       * check due date is less than current date
-       * if yes
-       * check submitted assignment is lessThan or equalto due date
-       * if yes return true
-       * if no reduce 10% from the total score
-       *
-       * if No
-       * return false
-       *
-       * if no
-       *  return false
-       *
-       *
-       */
-
-      if (item.id === obj.assignment_id) {
-        if (Date.parse(item.due_at) < new Date()) {
-          if (
-            Date.parse(obj.submission.submitted_at) >
-            Date.parse(item.due_at)
-          ) {
-            obj.submission.score -=
-              item.points_possible * 0.1;
-          }
-          obj.submission.point =
-            obj.submission.score / item.points_possible;
-          return true;
-        } else {
-          return false;
-        }
-      } else {
-        return false;
-      }
+//function to validate courseId and assignmentId
+function validateCourseIDAssignmentID(courseDetail, assignmentDetail){
+    if(courseDetail.id !== assignmentDetail.course_id){
+        throw new Error("Invalid input:")
     }
-  );
-  if (assignmetObj) {
-    return obj;
-  }
 }
-//dueDAteCheck(LearnerSubmissions[0]);
-let obj = {};
-for (let i = 0; i < LearnerSubmissions.length; i++) {
 
+//function to find valid assignments from learners submitions
+function getLearnerAssignmentDetails(assignments , learnerAssignmentID){
+  for(let i=0;i<assignments.length;i++){
+    if(assignments[i].id === learnerAssignmentID){
+      return assignments[i]
+    }
+  } return null
+} 
 
-  let result = dueDateCheck(LearnerSubmissions[i]);
-  if(result){
-    if (obj[LearnerSubmissions[i].learner_id]) {
-      obj[LearnerSubmissions[i].learner_id][
-        LearnerSubmissions[i].assignment_id
-      ] = result.submission.score;
-    } else {
-      obj[LearnerSubmissions[i].learner_id] = {
-        [LearnerSubmissions[i].assignment_id]:
-          result.submission.score
-      };
-      }
+//function to calculate score
+function calculatedScore(submission, assignments ){
+  if(isNaN(submission.score || isNaN(assignments.points_possible) || points_possible === 0)){
+    throw new Error(`invalid data: Assignmnet ID ${assignments.id} has invalid score or point_possible`)
   }
- 
+if(new Date(submission.submitted_at) > new Date(assignments.due_at)){
+  submission.score = submission.score - (assignments.points_possible) * 0.1 
 }
-console.log(Object.keys(obj));
-console.log(Object.values(obj));
-let idArray =  Object.keys(obj)
-  for(let i=0;i<idArray.length;i++){
-   let scoreObj =  obj[idArray[i]];
-
-  }
+return Math.max(0, submission.score/assignments.points_possible)
+}

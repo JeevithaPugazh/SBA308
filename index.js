@@ -1,4 +1,17 @@
-// The provided course information.
+/**
+ * There are 3 input groups: Course Info, Assignment Group (with an assignments array), and Learner Submission (with a submission object).
+ * The result should include:
+ 1.Learner ID
+ 2.Average Score: Calculated as the sum of all submitted assignment scores (including late submission adjustments) divided by the sum of all submitted assignment point_possible values.
+ 3. Assignment ID: Calculated as the submitted assignment score (including late submission adjustments) divided by the point_possible score.
+ * Constrains:
+ 1.Verify that the Assignment Group ID and Course ID are the same; otherwise, throw an error.
+ 2.Ensure the point_possible value is non zero and non-numeric.
+ 3.Ensure the Learner Score value is non zero and non-numeric.
+ 4.Get the valid assignments for validation by excluding assignments with due dates later than the current date.
+ */
+
+//Inputs
 const CourseInfo = {
   id: 451,
   name: "Introduction to JavaScript",
@@ -76,147 +89,173 @@ const LearnerSubmissions = [
   },
 ];
 
-//function to validate courseId and assignmentId
-function validateCourseIDAssignmentID(
+// Reusable function to verify that the Assignment Group ID and Course ID are the same; otherwise, throw an error.
+function verifyCourseIDAndAssignmetnID(
   courseDetail,
-  assignmentDetail
+  assignmentGroupDetail
 ) {
-  if (courseDetail.id !== assignmentDetail.course_id) {
-    throw new Error("Invalid input:");
+  if (courseDetail.id !== assignmentGroupDetail.course_id) {
+    throw new Error(
+      `Invalid input: Assignment course_Id: ${assignmentGroupDetail.course_id} is not match with Course ID: ${courseDetail.id}`
+    );
   }
 }
 
-//function to find valid assignments from learners submitions
+// Resusable function to calculate score - The submitted assignment score (including late submission adjustments) divided by the point_possible score.
+function calculatedScore(submissionObj, assignemnt) {
+  const submission = submissionObj.submission;
+  // Passing parameter LearnerSubmission.submission and AssignemtnGroup.assignments
+  let score = Number(submission.score);
+  let pointPossible = Number(assignemnt.points_possible);
+  /**
+   * Ensure the point_possible value is non zero and non-numeric.
+   * Ensure the Learner Score value non-numeric.
+   */
+  if (
+    score === isNaN ||
+    pointPossible === isNaN ||
+    pointPossible === 0
+  ) {
+    throw new Error(
+      `Invalid input: Assignment ID: ${assignemnt.id} has invalid value in score or point possible`
+    );
+  }
+
+  //Detect 10% for late submission to score from pointPossible
+  if (
+    Date.parse(submission.submitted_at) >
+    Date.parse(assignemnt.due_at)
+  ) {
+    // checking submitted due date is greater than assignment due date
+    score = score - Math.round(pointPossible * 0.1);
+  }
+  let percentage = convertToFixedDecimal(
+    score / pointPossible
+  );
+
+  // Creating an object to store the score and percentage separately, allowing them to be calculated independently for the average and final score in the result.
+  let scoreObject = {
+    score: score,
+    percentage: percentage,
+  };
+
+  return scoreObject;
+}
+
+//Function to round the decimal points to 3, rounding up if the fourth decimal place is 5 or higher.(To match the output)
+function convertToFixedDecimal(decimalNumber) {
+  return decimalNumber.toString().length > 5
+    ? Number(decimalNumber.toFixed(3))
+    : decimalNumber;
+}
+
+//Function to get the valid assignments for validation by excluding assignments with due dates later than the current date.
+function getValidAssignments(assignmentList) {
+  return assignmentList.filter(
+    (assignment) =>
+      Date.parse(assignment.due_at) <= new Date()
+  );
+}
+
+//Function to get assignment Info by comparing assignment Id in assignment list and Learner submission assignment Id
 function getLearnerAssignmentDetails(
-  assignments,
+  assignmentList,
   learnerAssignmentID
 ) {
-  for (let i = 0; i < assignments.length; i++) {
-    if (assignments[i].id === learnerAssignmentID) {
-      return assignments[i];
+  for (let i = 0; i < assignmentList.length; i++) {
+    if (assignmentList[i].id === learnerAssignmentID) {
+      return assignmentList[i];
     }
   }
   return null;
 }
 
-// function to calculate score
-function calculatedScore(submission, assignments) {
-  let score = Number(submission.score);
-  const pointPossible = Number(assignments.points_possible);
-  if (
-    isNaN(
-      score ||
-        isNaN(assignments.points_possible) ||
-        pointPossible === 0
-    )
-  ) {
-    throw new Error(
-      `invalid data: Assignmnet ID ${assignments.id} has invalid score or point_possible`
-    );
-  }
-  if (
-    new Date(submission.submitted_at) >
-    new Date(assignments.due_at)
-  ) {
-    score = score - Math.round(pointPossible * 0.1);
-  }
-  let percentage = Math.max(
-    0,
-    convertToFixedDecimal(score / pointPossible)
-  ); // cheking if score is less than 0 return null
-let scoreObject = {
-  "score" : score,
-  "percentage" : percentage,
-}
-  return scoreObject ;
-}
-// changing the numberWithFractions to only 3 decimalPoint if the fractions more than 5 digit.
-function convertToFixedDecimal(decimalNumber) {
-  return decimalNumber.toString().length > 5
-    ? decimalNumber.toFixed(3)
-    : decimalNumber;
-}
-
 function getLearnerData(
   courseDetail,
   assignmentDetail,
-  learnerSubmissionDetail
+  learnerSubmissionList
 ) {
   try {
-    validateCourseIDAssignmentID(
+    verifyCourseIDAndAssignmetnID(
       courseDetail,
       assignmentDetail
     );
 
-    const finalLearnerSubmissionDetails = {};
-    // Extractin
-    learnerSubmissionDetail.forEach((submission) => {
-      //Extracting attributes from learnerSubmissions object
+    let validAssignments = getValidAssignments(
+      assignmentDetail.assignments
+    );
+
+    //initializing finalResult as empty object
+    const finalSubmissionDetails = {};
+    // looping through the learner submission details array and getting each object keys.
+    learnerSubmissionList.forEach((submission) => {
       const {
         learner_id,
         assignment_id,
         submission: submissionDetails,
       } = submission;
 
-      const assignmentInfo = getLearnerAssignmentDetails(
-        assignmentDetail.assignments,
+      let assignmentInfo = getLearnerAssignmentDetails(
+        validAssignments,
         assignment_id
       );
+      if (assignmentInfo) {
+        //calculatedScore is returning the object with score and percentage.
+        let scoreObject = calculatedScore(
+          submission,
+          assignmentInfo
+        );
 
-      if (!assignmentInfo) {
-        // Ignore if not a valid assignment id
-        return;
-      }
-      if (new Date(assignmentInfo.due_at) > new Date()) {
-        return; // skip assignment id which is due date greater than current date
-      }
-      // console.log(assignment)
+        let score = scoreObject.score;
+        let percentage = scoreObject.percentage;
 
-      const scoreObject = calculatedScore(
-        submissionDetails,
-        assignmentInfo
-      );
-      // console.log(scorePercentage);
-      // Initialize final Learner details
-      if (!finalLearnerSubmissionDetails[learner_id]) {
-        finalLearnerSubmissionDetails[learner_id] = {
-          id: learner_id,
-          totalScore: 0,
-          totalPoint: 0,
+        //consolidated object from the Learner submission detail
+        const calculatedObject = {
+          assignmentId: assignment_id,
+          score: score,
+          percentage: percentage,
+          pointPossible: assignmentInfo.points_possible,
         };
-      }
 
-      finalLearnerSubmissionDetails[learner_id][
-        assignment_id
-      ] = scoreObject.percentage;
-      finalLearnerSubmissionDetails[
-        learner_id
-      ].totalScore += Number(scoreObject.score);
-      finalLearnerSubmissionDetails[
-        learner_id
-      ].totalPoint += Number(
-        assignmentInfo.points_possible
-      );
+        // initializing finalSubmissionDetails - adding the key value pair of id, totalSubmittedAssignmentScore(totalScore) and totalSubmittedAssignmentPointPossible score(totalPointPossibleScore)
+        if (!finalSubmissionDetails[learner_id]) {
+          finalSubmissionDetails[learner_id] = [
+            calculatedObject,
+          ];
+        } else {
+          finalSubmissionDetails[learner_id].push(
+            calculatedObject
+          );
+        }
+      }
     });
-    //Average calculation
-    return Object.values(finalLearnerSubmissionDetails).map(
-      (detail) => {
-        let finalResultObject = {
-          ...detail,
-          avg: convertToFixedDecimal(
-            detail.totalScore / detail.totalPoint
-          ),
-        };
-        delete finalResultObject.totalScore;
-        delete finalResultObject.totalPoint;
-        return finalResultObject;
+
+    let result = [];
+
+    for (let id in finalSubmissionDetails) {
+      let learnerObject = { id: id };
+      let submissionList = finalSubmissionDetails[id];
+      let totalScore = 0;
+      let totalPointPossible = 0;
+      for (let i = 0; i < submissionList.length; i++) {
+        learnerObject[submissionList[i].assignmentId] =
+          submissionList[i].percentage;
+        totalScore += submissionList[i].score;
+        totalPointPossible +=
+          submissionList[i].pointPossible;
       }
-    );
+
+      let avg = convertToFixedDecimal(
+        totalScore / totalPointPossible
+      );
+      learnerObject["avg"] = avg;
+      result.push(learnerObject);
+    }
+    return result;
   } catch (e) {
-    console.error("An error occurred:, error.message");
+    console.error(e.message);
   }
 }
-
 const result = getLearnerData(
   CourseInfo,
   AssignmentGroup,

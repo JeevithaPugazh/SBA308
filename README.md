@@ -1,10 +1,12 @@
 This Assignment is to get the LearnerData from inputs CourseInfo , AssignmentGroup and LearnerSubmissions 
 Sample input structure:
+
     * A CourseInfo object, which looks like this:
             {
             "id": number,
             "name": string,
             }
+
     * An AssignmentGroup object, which looks like this:
             {
             "id": number,
@@ -15,6 +17,7 @@ Sample input structure:
             "group_weight": number,
             "assignments": [AssignmentInfo],
             }
+
     * Each AssignmentInfo object within the assignments array looks like this:
             {
             "id": number,
@@ -24,6 +27,7 @@ Sample input structure:
             // the maximum points possible for the assignment
             "points_possible": number,
             }
+
     * An array of LearnerSubmission objects, which each look like this:
             {
             "learner_id": number,
@@ -35,11 +39,14 @@ Sample input structure:
             }
 
 Helper functions are:
+
 * verifyCourseIDAndAssignmetnID(courseDetail,assignmentGroupDetail):
+
         * Function to verify that the Assignment Group ID and Course ID are same; otherwise, throw an 
           error.
 
 * calculatedScore(submissionObj, assignemnt): 
+
         * Function to calculate score - The submitted assignment score (including late submission       
           adjustments) divided by the point_possible score.
         * Checking the point_possible value is non zero and non-numeric.
@@ -47,28 +54,36 @@ Helper functions are:
         * Detecting 10% for late submission to score from pointPossible
 
 * convertToFixedDecimal(decimalNumber):
+
         *Function to round the decimal points to 3, rounding up if the fourth decimal place is 5 or higher.
 
 * getValidAssignments(assignmentList):
+
         * Function to get the valid assignments for validation by excluding assignments with due dates 
           later than the current date. 
 
-* getLearnerAssignmentDetails(assignmentList,learnerAssignmentID) 
+* getLearnerAssignmentDetails(assignmentList,learnerAssignmentID):
+
         * Function to get assignment Info by comparing assignment Id in assignment list and Learner 
           submission assignment Id    
 
 Main function :
+
 function getLearnerData(courseDetail,assignmentDetail,learnerSubmissionList)
+
 * First inside the try catch method calling the verifyCourseIDAndAssignmetnID().
 * Inside catch creating the object to object called finalSubmissionDetails which contains the group of need data consolidated from LearnerSubmission object and AssignmentInfo object
 * Using foreach method in learner submission array to loop through each object and assigned the result in finalSubmissionDetails.
 * Using helper function calculatedScore() added score and percentage
+
 Sample finalSubmissionDetails object:
+
 {
   '125': [
     { assignmentId: 1, score: 47, percentage: 0.94, pointPossible: 50 }
   ]
 }
+
 {
 '132': [
     { assignmentId: 1, score: 39, percentage: 0.78, pointPossible: 50 }

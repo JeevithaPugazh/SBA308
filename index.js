@@ -158,16 +158,18 @@ function getValidAssignments(assignmentList) {
 }
 
 //Function to get assignment Info by comparing assignment Id in assignment list and Learner submission assignment Id
-function getLearnerAssignmentDetails(
+function getAssignmentInfo(
   assignmentList,
   learnerAssignmentID
 ) {
+  let assignmentInfo = null;
   for (let i = 0; i < assignmentList.length; i++) {
     if (assignmentList[i].id === learnerAssignmentID) {
-      return assignmentList[i];
+      assignmentInfo = assignmentList[i];
+      break;
     }
   }
-  return null;
+  return assignmentInfo;
 }
 
 function getLearnerData(
@@ -195,7 +197,7 @@ function getLearnerData(
         submission: submissionDetails,
       } = submission;
 
-      let assignmentInfo = getLearnerAssignmentDetails(
+      let assignmentInfo = getAssignmentInfo(
         validAssignments,
         assignment_id
       );
